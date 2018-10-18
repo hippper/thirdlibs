@@ -13,6 +13,6 @@ func TestTimestamp2str(t *testing.T) {
 	if timeStrNow != res {
 		t.Error("Timestamp2str fail.")
 	} else {
-		t.Log("Timestamp2str success")
+		t.Log("Timestamp2str success.")
 	}
 }
