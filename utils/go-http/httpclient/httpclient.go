@@ -1,5 +1,5 @@
 // Package httpclient inspired by Nodejs SuperAgent provides easy-way to write http client
-package httpclient
+package gorequest
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -18,6 +19,9 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
+type Request *http.Request
+type Response *http.Response
+
 // HTTP methods we support
 const (
 	POST   = "POST"
@@ -27,16 +31,9 @@ const (
 	DELETE = "DELETE"
 )
 
-const (
-	DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36"
-)
-
-type Request *http.Request
-type Response *http.Response
-
 // A SuperAgent is a object storing all request data for client.
 type SuperAgent struct {
-	URL        string
+	Url        string
 	Method     string
 	Header     map[string]string
 	TargetType string
@@ -48,7 +45,12 @@ type SuperAgent struct {
 	Transport  *http.Transport
 	Cookies    []*http.Cookie
 	Errors     []error
+	Log        bool // Log request and response
 }
+
+const (
+	DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36"
+)
 
 // Used to create a new SuperAgent object.
 func New() *SuperAgent {
@@ -75,7 +77,7 @@ func New() *SuperAgent {
 
 // Clear SuperAgent data for another new request.
 func (s *SuperAgent) ClearSuperAgent() {
-	s.URL = ""
+	s.Url = ""
 	s.Method = ""
 	s.Header = make(map[string]string)
 	s.Data = make(map[string]interface{})
@@ -90,7 +92,7 @@ func (s *SuperAgent) ClearSuperAgent() {
 func (s *SuperAgent) Get(targetUrl string) *SuperAgent {
 	s.ClearSuperAgent()
 	s.Method = GET
-	s.URL = targetUrl
+	s.Url = targetUrl
 	s.Errors = nil
 	return s
 }
@@ -98,7 +100,7 @@ func (s *SuperAgent) Get(targetUrl string) *SuperAgent {
 func (s *SuperAgent) Post(targetUrl string) *SuperAgent {
 	s.ClearSuperAgent()
 	s.Method = POST
-	s.URL = targetUrl
+	s.Url = targetUrl
 	s.Errors = nil
 	return s
 }
@@ -106,7 +108,7 @@ func (s *SuperAgent) Post(targetUrl string) *SuperAgent {
 func (s *SuperAgent) Head(targetUrl string) *SuperAgent {
 	s.ClearSuperAgent()
 	s.Method = HEAD
-	s.URL = targetUrl
+	s.Url = targetUrl
 	s.Errors = nil
 	return s
 }
@@ -114,7 +116,7 @@ func (s *SuperAgent) Head(targetUrl string) *SuperAgent {
 func (s *SuperAgent) Put(targetUrl string) *SuperAgent {
 	s.ClearSuperAgent()
 	s.Method = PUT
-	s.URL = targetUrl
+	s.Url = targetUrl
 	s.Errors = nil
 	return s
 }
@@ -122,7 +124,7 @@ func (s *SuperAgent) Put(targetUrl string) *SuperAgent {
 func (s *SuperAgent) Delete(targetUrl string) *SuperAgent {
 	s.ClearSuperAgent()
 	s.Method = DELETE
-	s.URL = targetUrl
+	s.Url = targetUrl
 	s.Errors = nil
 	return s
 }
@@ -130,7 +132,7 @@ func (s *SuperAgent) Delete(targetUrl string) *SuperAgent {
 // Set is used for setting header fields.
 // Example. To set `Accept` as `application/json`
 //
-//    httpclient.New().
+//    gorequest.New().
 //      Post("/gamelist").
 //      Set("Accept", "application/json").
 //      End()
@@ -157,7 +159,7 @@ var Types = map[string]string{
 // Type is a convenience function to specify the data type to send.
 // For example, to send data as `application/x-www-form-urlencoded` :
 //
-//    httpclient.New().
+//    gorequest.New().
 //      Post("/recipe").
 //      Type("form").
 //      Send(`{ name: "egg benedict", category: "brunch" }`).
@@ -165,7 +167,7 @@ var Types = map[string]string{
 //
 // This will POST the body "name=egg benedict&category=brunch" to url /recipe
 //
-// HttpClient supports
+// GoRequest supports
 //
 //    "text/html" uses "html"
 //    "application/json" uses "json"
@@ -184,7 +186,7 @@ func (s *SuperAgent) Type(typeStr string) *SuperAgent {
 // Query function accepts either json string or strings which will form a query-string in url of GET method or body of POST method.
 // For example, making "/search?query=bicycle&size=50x50&weight=20kg" using GET method:
 //
-//      httpclient.New().
+//      gorequest.New().
 //        Get("/search").
 //        Query(`{ query: 'bicycle' }`).
 //        Query(`{ size: '50x50' }`).
@@ -193,14 +195,14 @@ func (s *SuperAgent) Type(typeStr string) *SuperAgent {
 //
 // Or you can put multiple json values:
 //
-//      httpclient.New().
+//      gorequest.New().
 //        Get("/search").
 //        Query(`{ query: 'bicycle', size: '50x50', weight: '20kg' }`).
 //        End()
 //
 // Strings are also acceptable:
 //
-//      httpclient.New().
+//      gorequest.New().
 //        Get("/search").
 //        Query("query=bicycle&size=50x50").
 //        Query("weight=20kg").
@@ -208,7 +210,7 @@ func (s *SuperAgent) Type(typeStr string) *SuperAgent {
 //
 // Or even Mixed! :)
 //
-//      httpclient.New().
+//      gorequest.New().
 //        Get("/search").
 //        Query("query=bicycle").
 //        Query(`{ size: '50x50', weight:'20kg' }`).
@@ -249,7 +251,7 @@ func (s *SuperAgent) Timeout(timeout time.Duration) *SuperAgent {
 // Set TLSClientConfig for underling Transport.
 // One example is you can use it to disable security check (https):
 //
-//             httpclient.New().TLSClientConfig(&tls.Config{ InsecureSkipVerify: true}).
+//             gorequest.New().TLSClientConfig(&tls.Config{ InsecureSkipVerify: true}).
 //                 Get("https://disable-security-check.com").
 //                 End()
 //
@@ -262,15 +264,15 @@ func (s *SuperAgent) TLSClientConfig(config *tls.Config) *SuperAgent {
 // It provides a convenience way to setup proxy which have advantages over usual old ways.
 // One example is you might try to set `http_proxy` environment. This means you are setting proxy up for all the requests.
 // You will not be able to send different request with different proxy unless you change your `http_proxy` environment again.
-// Another example is using Golang proxy setting. This is normal prefer way to do but too verbase compared to HttpClient's Proxy:
+// Another example is using Golang proxy setting. This is normal prefer way to do but too verbase compared to GoRequest's Proxy:
 //
-//      httpclient.New().Proxy("http://myproxy:9999").
+//      gorequest.New().Proxy("http://myproxy:9999").
 //        Post("http://www.google.com").
 //        End()
 //
 // To set no_proxy, just put empty string to Proxy func:
 //
-//      httpclient.New().Proxy("").
+//      gorequest.New().Proxy("").
 //        Post("http://www.google.com").
 //        End()
 //
@@ -300,14 +302,14 @@ func (s *SuperAgent) RedirectPolicy(policy func(req Request, via []Request) erro
 // Send function accepts either json string or query strings which is usually used to assign data to POST or PUT method.
 // Without specifying any type, if you give Send with json data, you are doing requesting in json format:
 //
-//      httpclient.New().
+//      gorequest.New().
 //        Post("/search").
 //        Send(`{ query: 'sushi' }`).
 //        End()
 //
-// While if you use at least one of querystring, HttpClient understands and automatically set the Content-Type to `application/x-www-form-urlencoded`
+// While if you use at least one of querystring, GoRequest understands and automatically set the Content-Type to `application/x-www-form-urlencoded`
 //
-//      httpclient.New().
+//      gorequest.New().
 //        Post("/search").
 //        Send("query=tonkatsu").
 //        End()
@@ -315,7 +317,7 @@ func (s *SuperAgent) RedirectPolicy(policy func(req Request, via []Request) erro
 // So, if you want to strictly send json format, you need to use Type func to set it as `json` (Please see more details in Type function).
 // You can also do multiple chain of Send:
 //
-//      httpclient.New().
+//      gorequest.New().
 //        Post("/search").
 //        Send("query=bicycle&size=50x50").
 //        Send(`{ wheel: '4'}`).
@@ -328,7 +330,7 @@ func (s *SuperAgent) RedirectPolicy(policy func(req Request, via []Request) erro
 //        Firefox string
 //      }
 //      ver := BrowserVersionSupport{ Chrome: "37.0.2041.6", Firefox: "30.0" }
-//      httpclient.New().
+//      gorequest.New().
 //        Post("/update_version").
 //        Send(ver).
 //        Send(`{"Safari":"5.1.10"}`).
@@ -422,21 +424,21 @@ func changeMapToURLValues(data map[string]interface{}) url.Values {
 //
 // For example:
 //
-//    resp, body, errs := httpclient.New().Get("http://www.google.com").End()
+//    resp, body, errs := gorequest.New().Get("http://www.google.com").End()
 //    if( errs != nil){
 //      fmt.Println(errs)
 //    }
 //    fmt.Println(resp, body)
 //
 // Moreover, End function also supports callback which you can put as a parameter.
-// This extends the flexibility and makes HttpClient fun and clean! You can use HttpClient in whatever style you love!
+// This extends the flexibility and makes GoRequest fun and clean! You can use GoRequest in whatever style you love!
 //
 // For example:
 //
-//    func printBody(resp httpclient.Response, body string, errs []error){
+//    func printBody(resp gorequest.Response, body string, errs []error){
 //      fmt.Println(resp.Status)
 //    }
-//    httpclient.New().Get("http://www..google.com").End(printBody)
+//    gorequest.New().Get("http://www..google.com").End(printBody)
 //
 func (s *SuperAgent) End(callback ...func(response Response, body string, errs []error)) (Response, string, []error) {
 	var (
@@ -454,25 +456,39 @@ func (s *SuperAgent) End(callback ...func(response Response, body string, errs [
 		s.TargetType = s.ForceType
 	}
 
+	// Debug log request
+	s.log("--------------------------------------------------------------------------------")
+	s.log("REQUEST")
+	s.log("--------------------------------------------------------------------------------")
+	s.log("Method:", s.Method)
+
 	switch s.Method {
 	case POST, PUT:
 		if s.TargetType == "json" {
 			contentJson, _ := json.Marshal(s.Data)
+
+			s.log("Post Data:", string(contentJson))
+
 			contentReader := bytes.NewReader(contentJson)
-			req, err = http.NewRequest(s.Method, s.URL, contentReader)
+			req, err = http.NewRequest(s.Method, s.Url, contentReader)
 			req.Header.Set("Content-Type", "application/json")
 		} else if s.TargetType == "form" {
 			formData := changeMapToURLValues(s.Data)
-			req, err = http.NewRequest(s.Method, s.URL, strings.NewReader(formData.Encode()))
+
+			s.log("Form Data:", formData.Encode())
+
+			req, err = http.NewRequest(s.Method, s.Url, strings.NewReader(formData.Encode()))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		}
 	case GET, HEAD, DELETE:
-		req, err = http.NewRequest(s.Method, s.URL, nil)
+		req, err = http.NewRequest(s.Method, s.Url, nil)
 	}
 
 	for k, v := range s.Header {
 		req.Header.Set(k, v)
 	}
+	s.log("Header:", req.Header)
+
 	// Add all querystring from Query func
 	q := req.URL.Query()
 	for k, v := range s.QueryData {
@@ -481,6 +497,8 @@ func (s *SuperAgent) End(callback ...func(response Response, body string, errs [
 		}
 	}
 	req.URL.RawQuery = q.Encode()
+	s.log("Query Data:", q.Encode())
+	s.log("URL:", req.URL)
 
 	// Add cookies
 	for _, cookie := range s.Cookies {
@@ -503,10 +521,30 @@ func (s *SuperAgent) End(callback ...func(response Response, body string, errs [
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	bodyString := string(body)
+
+	// Debug log response
+	s.log("--------------------------------------------------------------------------------")
+	s.log("RESPONSE")
+	s.log("--------------------------------------------------------------------------------")
+	s.log("Status:", resp.Status)
+	s.log("Header:", resp.Header)
+	s.log("Body:", bodyString)
+
 	// deep copy response to give it to both return and callback func
 	respCallback := *resp
 	if len(callback) != 0 {
 		callback[0](&respCallback, bodyString, s.Errors)
 	}
 	return resp, bodyString, nil
+}
+
+func (s *SuperAgent) Debug() *SuperAgent {
+	s.Log = true
+	return s
+}
+
+func (s *SuperAgent) log(args ...interface{}) {
+	if s.Log {
+		log.Println(args...)
+	}
 }
