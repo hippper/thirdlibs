@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"tl-gitlab/base/daemon"
+	"github.com/luckyweiwei/base/daemon"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 

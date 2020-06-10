@@ -3,7 +3,7 @@ package grmon
 import (
 	"sync"
 
-	"tl-gitlab/base/utils"
+	"github.com/luckyweiwei/base/utils"
 )
 
 type TGRMon struct {

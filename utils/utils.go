@@ -11,7 +11,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	. "tl-gitlab/base/logger"
+	. "github.com/luckyweiwei/base/logger"
 )
 
 func ASSERT(exp bool, info ...string) {
