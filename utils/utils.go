@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -51,23 +49,4 @@ func CatchException() {
 func UseMaxCpu() {
 	// multiple cpus using
 	runtime.GOMAXPROCS(runtime.NumCPU())
-}
-
-func FormatJsonStr(instr string) string {
-	var out bytes.Buffer
-	json.Indent(&out, []byte(instr), "", "  ")
-
-	return "\n" + out.String() + "\n"
-}
-
-func FormatStruct(inst interface{}) string {
-	instr := SerializeToJson(inst)
-	return FormatJsonStr(instr)
-}
-
-func SerializeToJson(st interface{}) string {
-	ba, _ := json.Marshal(st)
-	jsonstr := string(ba)
-
-	return jsonstr
 }

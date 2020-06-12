@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	json2 "encoding/json"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
@@ -57,7 +58,7 @@ func DecodeJsonToStruct(msg string, req interface{}) error {
 
 func FormatJsonStr(instr string) string {
 	var out bytes.Buffer
-	json.Indent(&out, []byte(instr), "", "  ")
+	json2.Indent(&out, []byte(instr), "", "  ")
 
 	return "\n" + out.String() + "\n"
 }
@@ -66,4 +67,3 @@ func FormatStruct(inst interface{}) string {
 	instr := SerializeToJson(inst)
 	return FormatJsonStr(instr)
 }
-

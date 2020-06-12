@@ -28,8 +28,5 @@ func init() {
 			isDaemon = true
 			os.Exit(0)
 		}
-	} else {
-		log.Println("The number of arguments incorrect .")
-		os.Exit(4)
 	}
 }
