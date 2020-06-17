@@ -57,6 +57,18 @@ func New() *SuperAgent {
 		PublicSuffixList: publicsuffix.List,
 	}
 	jar, _ := cookiejar.New(&cookiejarOptions)
+
+	transport := &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).Dial,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
 	s := &SuperAgent{
 		TargetType: "json",
 		Data:       make(map[string]interface{}),
@@ -64,7 +76,7 @@ func New() *SuperAgent {
 		FormData:   url.Values{},
 		QueryData:  url.Values{},
 		Client:     &http.Client{Jar: jar},
-		Transport:  &http.Transport{},
+		Transport:  transport,
 		Cookies:    make([]*http.Cookie, 0),
 		Errors:     nil,
 	}
@@ -279,7 +291,6 @@ func (s *SuperAgent) TLSClientConfig(config *tls.Config) *SuperAgent {
 //
 func (s *SuperAgent) Proxy(proxyUrl string) *SuperAgent {
 	if proxyUrl == "" {
-		s.Transport.Proxy = nil
 		return s
 	}
 
@@ -521,7 +532,7 @@ func (s *SuperAgent) End(callback ...func(response Response, body string, errs [
 	}
 
 	// temporarily set Transport.DisableKeepAlives
-	s.Transport.DisableKeepAlives = true
+	// s.Transport.DisableKeepAlives = true
 
 	// Set Transport
 	s.Client.Transport = s.Transport
