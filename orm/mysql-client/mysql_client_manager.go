@@ -8,7 +8,7 @@ import (
 )
 
 type MysqlClientManager struct {
-	configs      []DataSource
+	configs      []MysqlClient
 	dbs          []*gorm.DB
 	masterDB     *gorm.DB
 	slaveDB      *gorm.DB
@@ -19,11 +19,11 @@ type MysqlClientManager struct {
 
 var mysqlClientManager = &MysqlClientManager{}
 
-func DataSourceInstance() *MysqlClientManager {
+func MysqlClientInstance() *MysqlClientManager {
 	return mysqlClientManager
 }
 
-func (d *MysqlClientManager) openDBConn(ds DataSource) *gorm.DB {
+func (d *MysqlClientManager) openDBConn(ds MysqlClient) *gorm.DB {
 	db, err := gorm.Open("mysql", ds.URL)
 	if err != nil {
 		Log.Errorf("connect to mysql failed, err = %v", err)
@@ -56,7 +56,7 @@ func (d *MysqlClientManager) openDBConn(ds DataSource) *gorm.DB {
 	return db
 }
 
-func (d *MysqlClientManager) openMemDBConn(ds DataSource) *gorm.DB {
+func (d *MysqlClientManager) openMemDBConn(ds MysqlClient) *gorm.DB {
 	db, err := gorm.Open("mysql", ds.URL)
 	if err != nil {
 		Log.Errorf("connect to mysql failed, err = %v", err)
