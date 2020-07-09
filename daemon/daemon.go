@@ -21,12 +21,17 @@ func init() {
 			err := cmd.Start()
 			if err != nil {
 				log.Fatal(err)
-				os.Exit(4)
+				os.Exit(1)
 			}
 			log.Println("Server running in daemon . [PID]", cmd.Process.Pid)
 
 			isDaemon = true
 			os.Exit(0)
+		} else if os.Args[1] == "--daemon" {
+			isDaemon = true
+			// 恢复参数位置
+			i := 1
+			os.Args = append(os.Args[:i], os.Args[i+1:]...)
 		}
 	}
 }
