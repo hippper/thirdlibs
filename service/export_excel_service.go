@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
-	"gitlab.99safe.org/magpie/base/utils"
+	"github.com/luckyweiwei/base/utils"
 
 	"golang.org/x/sync/semaphore"
 )
@@ -36,9 +36,9 @@ func (service *ExportExcelService) Export(xlsx *excelize.File, title []interface
 
 	var (
 		sheetname = "Sheet1"
-		axis = "A1"
-		sheetNum = 1
-		rowNum = 1
+		axis      = "A1"
+		sheetNum  = 1
+		rowNum    = 1
 	)
 
 	err := xlsx.SetSheetRow(sheetname, axis, &title)
