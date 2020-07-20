@@ -14,7 +14,5 @@ require (
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )

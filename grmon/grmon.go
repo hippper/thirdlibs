@@ -30,7 +30,7 @@ func (s *TGRMon) Go(name string, fn interface{}, args ...interface{}) {
 
 	go func() {
 
-		defer utils.CatchPanic()
+		defer utils.CatchExceptionWithName(name)
 
 		s.addGR(name)
 		defer s.removeGR(name)
@@ -49,7 +49,7 @@ func (s *TGRMon) GoLoop(name string, fn interface{}, args ...interface{}) {
 
 	go func() {
 
-		defer utils.CatchPanic()
+		defer utils.CatchExceptionWithName(name)
 
 		s.addGR(name)
 		defer s.removeGR(name)

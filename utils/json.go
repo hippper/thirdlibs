@@ -7,13 +7,9 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/json-iterator/go/extra"
-	validator "gopkg.in/go-playground/validator.v8"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
-
-var config *validator.Config = &validator.Config{TagName: "binding"}
-var validate *validator.Validate = validator.New(config)
 
 func init() {
 	extra.RegisterFuzzyDecoders()
@@ -40,20 +36,6 @@ func DecodeFromJson(jsonstr string, st interface{}) error {
 	d := json.NewDecoder(strings.NewReader(jsonstr))
 	d.UseNumber()
 	return d.Decode(st)
-}
-
-// add validate
-func DecodeJsonToStruct(msg string, req interface{}) error {
-	err := DecodeFromJson(msg, req)
-	if err != nil {
-		return err
-	}
-
-	err = validate.Struct(req)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func FormatJsonStr(instr string) string {
