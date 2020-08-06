@@ -9,6 +9,7 @@ import (
 
 // Mongo client config
 type MongoClientConfig struct {
+	Name     string
 	URL      string
 	Database string
 }

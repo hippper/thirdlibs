@@ -24,7 +24,7 @@ func MongoClientManagerInit(configs []MongoClientConfig) error {
 			return err
 		}
 
-		mongoClientManager.mongoClientMap.Store(config.Database, client)
+		mongoClientManager.mongoClientMap.Store(config.Name, client)
 	}
 	return nil
 }
@@ -33,10 +33,10 @@ func GetMongoClientManager() *MongoClientManager {
 	return mongoClientManager
 }
 
-func (r *MongoClientManager) GetMongoClient(database string) *mongo.Client {
-	clientobj, ok := r.mongoClientMap.Load(database)
+func (r *MongoClientManager) GetMongoClient(name string) *mongo.Client {
+	clientobj, ok := r.mongoClientMap.Load(name)
 	if !ok {
-		Log.Warnf("can't find client in map, database=%v", database)
+		Log.Warnf("can't find client in map, name=%v", name)
 		return nil
 	}
 
@@ -45,10 +45,10 @@ func (r *MongoClientManager) GetMongoClient(database string) *mongo.Client {
 	return client.Client
 }
 
-func (r *MongoClientManager) GetMongoDatabaseClient(database string) *mongo.Database {
-	clientobj, ok := r.mongoClientMap.Load(database)
+func (r *MongoClientManager) GetMongoDatabaseClient(name string) *mongo.Database {
+	clientobj, ok := r.mongoClientMap.Load(name)
 	if !ok {
-		Log.Warnf("can't find client in map, database=%v", database)
+		Log.Warnf("can't find client in map, name=%v", name)
 		return nil
 	}
 
