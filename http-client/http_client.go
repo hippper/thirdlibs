@@ -145,6 +145,7 @@ func (s *SuperAgent) Delete(targetUrl string) *SuperAgent {
 //
 //    gorequest.New().
 //      Post("/gamelist").
+//      Set("Content-Type", "application/json").
 //      Set("Accept", "application/json").
 //      End()
 func (s *SuperAgent) Set(param string, value string) *SuperAgent {

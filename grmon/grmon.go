@@ -1,7 +1,7 @@
 package grmon
 
 import (
-	"git.nzajiw.com/base/utils"
+	"github.com/luckyweiwei/base/utils"
 )
 
 type TGRMon struct {
