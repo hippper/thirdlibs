@@ -1,9 +1,7 @@
 package logger
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -13,14 +11,15 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/BurntSushi/toml"
 	"github.com/sirupsen/logrus"
 )
-
-var Log *Logger
 
 type Logger struct {
 	*logrus.Logger
 }
+
+var Log *Logger
 
 var l sync.Mutex
 
@@ -67,8 +66,8 @@ type TLogConfig struct {
 }
 
 func readLogConfig() *TLogConfig {
-	filepath := "./config/log.json"
-	content, err := ioutil.ReadFile(filepath)
+	filepath := "./config/log.toml"
+	_, err := os.Stat(filepath)
 	if err != nil {
 		fmt.Printf("read log config failed, err = %v\n", err)
 		fmt.Printf("will use default log config\n")
@@ -81,11 +80,9 @@ func readLogConfig() *TLogConfig {
 	}
 
 	config := &TLogConfig{}
-	d := json.NewDecoder(strings.NewReader(string(content)))
-	d.UseNumber()
-	err = d.Decode(config)
+	_, err = toml.DecodeFile(filepath, config)
 	if err != nil {
-		fmt.Printf("invalid log config, err = %v\n", err)
+		fmt.Printf("read log config failed, err = %v\n", err)
 		fmt.Printf("will use default log config\n")
 		return &TLogConfig{
 			MaxSize:    1024,
@@ -94,53 +91,7 @@ func readLogConfig() *TLogConfig {
 			Level:      "DEBUG",
 		}
 	}
-
 	return config
-}
-
-// func LogInitWithConfig(config *TLogConfig) *Logger {
-// 	l.Lock()
-// 	defer l.Unlock()
-// 	if Log == nil {
-// 		Log = &Logger{}
-
-// 		Log.Logger = logrus.New()
-
-// 		formatter := &TextFormatter{
-// 			FullTimestamp:   true,
-// 			TimestampFormat: "2006-01-02 15:04:05.000",
-// 		}
-
-// 		hook := NewRotateFileHook(RotateFileConfig{
-// 			Filename:   config.FileName,
-// 			MaxSize:    config.MaxSize,
-// 			MaxBackups: config.MaxBackups,
-// 			MaxAge:     config.MaxAge,
-// 			Formatter:  formatter,
-// 		})
-
-// 		level := getLevel(config.Level)
-// 		Log.AddHook(hook)
-// 		Log.Formatter = formatter
-// 		Log.SetLevel(level)
-// 		Log.Info("logger init")
-// 	}
-
-// 	return Log
-// }
-
-func GetLogger() *Logger {
-	if Log == nil {
-		panic("Log is nil")
-	}
-	return Log
-}
-
-func (log *Logger) Output(calldepth int, s string) error {
-	// line := log.getLineNumer(calldepth)
-	// log.Logger.Debug(s, line)
-	log.Debug(s)
-	return nil
 }
 
 func (log *Logger) getLineNumer(skip int) string {
