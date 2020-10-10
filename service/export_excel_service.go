@@ -7,6 +7,7 @@ import (
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/luckyweiwei/base/utils"
 
+	. "github.com/luckyweiwei/base/logger"
 	"golang.org/x/sync/semaphore"
 )
 

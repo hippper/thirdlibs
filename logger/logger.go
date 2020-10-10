@@ -57,6 +57,36 @@ func LogInit() *Logger {
 	return Log
 }
 
+func LogInitWithConfig(conf *TLogConfig) *Logger {
+	l.Lock()
+	defer l.Unlock()
+
+	Log = &Logger{}
+	Log.Logger = logrus.New()
+	formatter := &TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05.000",
+	}
+
+	fullPath, _ := exec.LookPath(os.Args[0])
+	fname := filepath.Base(fullPath)
+
+	hook := NewRotateFileHook(RotateFileConfig{
+		Filename:   "./log/" + fname + ".log",
+		MaxSize:    conf.MaxSize,
+		MaxBackups: conf.MaxBackups,
+		MaxAge:     conf.MaxAge,
+		Formatter:  formatter,
+	})
+
+	Log.AddHook(hook)
+	Log.Formatter = formatter
+	Log.SetLogLevel(conf.Level)
+	Log.Info("logger init with config")
+
+	return Log
+}
+
 type TLogConfig struct {
 	// FileName   string
 	MaxSize    int

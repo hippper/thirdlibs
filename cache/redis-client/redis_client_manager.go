@@ -2,6 +2,8 @@ package redisclient
 
 import (
 	"sync"
+
+	. "github.com/luckyweiwei/base/logger"
 )
 
 type RedisClientManager struct {

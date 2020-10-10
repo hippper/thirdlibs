@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	. "github.com/luckyweiwei/base/logger"
 )
 
 // Redis client config
@@ -65,6 +66,7 @@ func NewRedisClient(c RedisClientConfig) (*RedisClient, error) {
 			MaxActive:   c.Active,
 			MaxIdle:     c.Idle,
 			IdleTimeout: time.Duration(c.IdleTimeout),
+			Wait:        true,
 			Dial:        dialFunc,
 		},
 	}

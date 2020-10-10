@@ -3,6 +3,7 @@ package mongoclient
 import (
 	"context"
 
+	. "github.com/luckyweiwei/base/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
