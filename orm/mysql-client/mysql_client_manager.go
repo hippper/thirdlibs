@@ -1,102 +1,47 @@
 package mysqlclient
 
 import (
-	"reflect"
-	"time"
+	"sync"
 
-	"github.com/jinzhu/gorm"
 	. "github.com/luckyweiwei/base/logger"
+	"gorm.io/gorm"
 )
 
 type MysqlClientManager struct {
-	configs      []MysqlClient
-	dbs          []*gorm.DB
-	masterDB     *gorm.DB
-	slaveDB      *gorm.DB
-	memoryDB     *gorm.DB
-	models       []interface{}
-	memoryModels []interface{}
+	mysqlClientMap *sync.Map
 }
 
-var mysqlClientManager = &MysqlClientManager{}
+var mysqlClientManager *MysqlClientManager = nil
 
-func MysqlClientInstance() *MysqlClientManager {
+func MysqlClientManagerInit(configs []MysqlClientConfig) error {
+	mysqlClientManager = &MysqlClientManager{
+		mysqlClientMap: &sync.Map{},
+	}
+
+	for _, config := range configs {
+		client, err := NewMysqlClient(config)
+		if err != nil {
+			Log.Error(err)
+			return err
+		}
+
+		mysqlClientManager.mysqlClientMap.Store(config.Name, client)
+	}
+	return nil
+}
+
+func GetMysqlClientManager() *MysqlClientManager {
 	return mysqlClientManager
 }
 
-func (d *MysqlClientManager) openDBConn(ds MysqlClient) *gorm.DB {
-	db, err := gorm.Open("mysql", ds.URL)
-	if err != nil {
-		Log.Errorf("connect to mysql failed, err = %v", err)
+func (r *MysqlClientManager) GetMysqlClient(name string) *gorm.DB {
+	clientobj, ok := r.mysqlClientMap.Load(name)
+	if !ok {
+		Log.Errorf("can't find client in map, name=%v", name)
 		return nil
 	}
 
-	db.DB().SetMaxIdleConns(ds.IdleSize)
-	db.DB().SetMaxOpenConns(ds.MaxSize)
-	db.DB().SetConnMaxLifetime(time.Duration(ds.MaxLifeTime) * time.Second)
+	client := clientobj.(*gorm.DB)
 
-	// 设置字符编码
-	db = db.Set("gorm:table_options", "ENGINE=InnoDB CHARSET=utf8mb4")
-	db.SingularTable(true)
-	if ds.SqlDebug == 1 {
-		db.LogMode(true)
-		db.SetLogger(TSQLLogger{})
-	}
-
-	for _, m := range d.models {
-		if !db.HasTable(m) {
-			// Log.Debugf("m = %v", reflect.TypeOf(m))
-			err := db.CreateTable(m).Error
-			if err != nil {
-				Log.Errorf("m = %v, err = %v", reflect.TypeOf(m), err)
-			}
-		}
-	}
-	db.AutoMigrate(d.models...)
-
-	return db
-}
-
-func (d *MysqlClientManager) openMemDBConn(ds MysqlClient) *gorm.DB {
-	db, err := gorm.Open("mysql", ds.URL)
-	if err != nil {
-		Log.Errorf("connect to mysql failed, err = %v", err)
-		return nil
-	}
-
-	db.DB().SetMaxIdleConns(ds.IdleSize)
-	db.DB().SetMaxOpenConns(ds.MaxSize)
-	db.DB().SetConnMaxLifetime(time.Duration(ds.MaxLifeTime) * time.Second)
-
-	// 设置字符编码
-	db = db.Set("gorm:table_options", "ENGINE=MEMORY CHARSET=utf8mb4")
-	db.SingularTable(true)
-	if ds.SqlDebug == 1 {
-		db.LogMode(true)
-		db.SetLogger(TSQLLogger{})
-	}
-
-	for _, m := range d.memoryModels {
-		if !db.HasTable(m) {
-			err := db.CreateTable(m).Error
-			if err != nil {
-				Log.Error(err)
-			}
-		}
-	}
-	db.AutoMigrate(d.memoryModels...)
-
-	return db
-}
-
-func (d *MysqlClientManager) Master() *gorm.DB {
-	return d.masterDB
-}
-
-func (d *MysqlClientManager) Slave() *gorm.DB {
-	return d.slaveDB
-}
-
-func (d *MysqlClientManager) Memory() *gorm.DB {
-	return d.memoryDB
+	return client
 }
