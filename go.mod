@@ -6,7 +6,6 @@ require (
 	github.com/360EntSecGroup-Skylar/excelize v1.4.1
 	github.com/BurntSushi/toml v0.3.1
 	github.com/gomodule/redigo/redis v0.0.0-20200429221454-e14091dffc1b
-	github.com/jinzhu/gorm v1.9.14
 	github.com/json-iterator/go v1.1.10
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d

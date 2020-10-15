@@ -2,6 +2,7 @@ package mysqlclient
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	. "github.com/luckyweiwei/base/logger"
@@ -42,43 +43,42 @@ func NewMysqlClient(c MysqlClientConfig) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Duration(c.MaxLifeTime) * time.Second)
 
 	// migrate
-	memoryModels := c.MemoryModels
-	if len(memoryModels) > 0 {
-		// 创建表时添加后缀
-		db = db.Set("gorm:table_options", "ENGINE=MEMORY CHARSET=utf8mb4")
+	migrate(db, "Memory", c.MemoryModels)
+	migrate(db, "MyISAM", c.MyisamModels)
+	migrate(db, "InnoDb", c.InnoModels)
 
-		for _, m := range memoryModels {
-			if !db.Migrator().HasTable(m) {
-				err := db.Migrator().CreateTable(m)
-				if err != nil {
-					Log.Errorf("m = %v, err = %v", reflect.TypeOf(m), err)
-					continue
-				}
-			}
-		}
-		err := db.AutoMigrate(memoryModels...)
-		if err != nil {
-			Log.Error(err)
-		}
-	}
-
-	innoModels := c.InnoModels
-	if innoModels != nil {
-		if len(innoModels) > 0 {
-			db = db.Set("gorm:table_options", "ENGINE=InnoDB CHARSET=utf8mb4")
-
-		}
-	}
-
-	//db = db.Set("gorm:table_options", "ENGINE=MyISAM CHARSET=utf8mb4")
-	//
-	return nil, nil
+	return db, nil
 }
 
 func migrate(db *gorm.DB, engine string, models []interface{}) {
+	if len(models) <= 0 {
+		return
+	}
 
+	// 创建表时添加后缀
+	setTableOption := ""
+	if strings.EqualFold(engine, "InnoDb") {
+		setTableOption = "ENGINE=InnoDB CHARSET=utf8mb4"
+	} else if strings.EqualFold(engine, "Memory") {
+		setTableOption = "ENGINE=MEMORY CHARSET=utf8mb4"
+	} else if strings.EqualFold(engine, "MyISAM") {
+		setTableOption = "ENGINE=MyISAM CHARSET=utf8mb4"
+	}
+	if setTableOption != "" {
+		db.Set("gorm:table_options", setTableOption)
+	}
+
+	for _, m := range models {
+		if !db.Migrator().HasTable(m) {
+			err := db.Migrator().CreateTable(m)
+			if err != nil {
+				Log.Errorf("m = %v, err = %v", reflect.TypeOf(m), err)
+				continue
+			}
+		}
+	}
+	err := db.AutoMigrate(models...)
+	if err != nil {
+		Log.Error(err)
+	}
 }
-
-// func MysqlClientRegisterModels(models ...interface{}) {
-// 	mysqlClientManager.models = models
-// }
