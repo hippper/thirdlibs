@@ -27,6 +27,8 @@ func NewMysqlClient(c MysqlClientConfig) (*gorm.DB, error) {
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
+		Logger: &SqlLogger{},
+		// Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		Log.Errorf("connect to mysql failed, err = %v", err)
