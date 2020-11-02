@@ -17,6 +17,7 @@ type MysqlClientConfig struct {
 	IdleSize     int
 	MaxSize      int
 	MaxLifeTime  int64
+	SqlDebug     int
 	InnoModels   []interface{}
 	MyisamModels []interface{}
 	MemoryModels []interface{}
@@ -27,8 +28,9 @@ func NewMysqlClient(c MysqlClientConfig) (*gorm.DB, error) {
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
-		Logger: &SqlLogger{},
-		// Logger: logger.Default.LogMode(logger.Info),
+		Logger: &SqlLogger{
+			SqlDebug: c.SqlDebug,
+		},
 	})
 	if err != nil {
 		Log.Errorf("connect to mysql failed, err = %v", err)
