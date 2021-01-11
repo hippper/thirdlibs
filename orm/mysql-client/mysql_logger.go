@@ -56,19 +56,18 @@ func (s *SqlLogger) Trace(ctx context.Context, begin time.Time, fc func() (strin
 	}
 
 	elapsed := time.Since(begin)
-	sql, _ := fc()
+	sql, sqlAffected := fc()
 
 	ignorestr := `/*no print*/`
 	if strings.Contains(sql, ignorestr) {
 		return
 	}
 
+	msg := fmt.Sprintf("\n Sql:%v%v%v\n RowsAffected:%v%v%v\n Cost:%v%v%v\n",
+		Blue, sql, Reset, Yellow, sqlAffected, Reset, Green, elapsed, Reset)
+	Log.Info(msg)
+
 	if err != nil {
-		msg := fmt.Sprintf("%v%v%v %v%v%v", Yellow, elapsed, Reset, Blue, sql, Reset)
-		Log.Info(msg)
 		Log.Error(err)
-	} else {
-		msg := fmt.Sprintf("%v%v%v %v%v%v", Yellow, elapsed, Reset, Blue, sql, Reset)
-		Log.Info(msg)
 	}
 }
