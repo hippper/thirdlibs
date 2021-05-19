@@ -28,7 +28,17 @@ func LogInit() *Logger {
 	defer l.Unlock()
 	if Log == nil {
 
-		config := readLogConfig()
+		config, err := readLogConfig()
+		if err != nil {
+			fmt.Printf("read log config failed, err = %v\n", err)
+			fmt.Printf("will use default log config\n")
+			config = &TLogConfig{
+				MaxSize:    1024,
+				MaxBackups: 10,
+				MaxAge:     7,
+				Level:      "DEBUG",
+			}
+		}
 
 		Log = &Logger{}
 		Log.Logger = logrus.New()
@@ -95,33 +105,19 @@ type TLogConfig struct {
 	Level      string
 }
 
-func readLogConfig() *TLogConfig {
+func readLogConfig() (*TLogConfig, error) {
 	filepath := "./config/log.toml"
 	_, err := os.Stat(filepath)
 	if err != nil {
-		fmt.Printf("read log config failed, err = %v\n", err)
-		fmt.Printf("will use default log config\n")
-		return &TLogConfig{
-			MaxSize:    1024,
-			MaxBackups: 10,
-			MaxAge:     7,
-			Level:      "DEBUG",
-		}
+		return nil, err
 	}
 
 	config := &TLogConfig{}
 	_, err = toml.DecodeFile(filepath, config)
 	if err != nil {
-		fmt.Printf("read log config failed, err = %v\n", err)
-		fmt.Printf("will use default log config\n")
-		return &TLogConfig{
-			MaxSize:    1024,
-			MaxBackups: 10,
-			MaxAge:     7,
-			Level:      "DEBUG",
-		}
+		return nil, err
 	}
-	return config
+	return config, nil
 }
 
 func (log *Logger) getLineNumer(skip int) string {
